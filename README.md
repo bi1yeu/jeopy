@@ -6,7 +6,7 @@ The only house rule baked into the program is that Daily Doubles are valued at t
 
 ## Usage
 
-Requires Python 3.
+Requires Python 3. On Windows you will also need `pip install pyreadline`.
 
 ```bash
 $ chmod +x jeo.py
