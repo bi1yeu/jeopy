@@ -30,20 +30,25 @@ $ ./jeo.py
 > -z6
                                                                     a: $1,400
                                                                     z: $-1,200
+> # score two players simultaneously (as in a tie)
+> 2 az
+                                                                    a: $1,600
+                                                                    z: $-1,000
 > # enter double jeopardy round
 > double
+>>
 ```
 
 Type `help` at the prompt for a full list of commands.
 
 ## R&D
 
-- allow score multiple players in single entry (for ties), e.g. `2 mk`
-- save entries to file / replay from file
-- confirm exit
-- undo
-- reset score
-- play theme song
-- final jeopardy mode
-- config file
-- different daily double options
+- [x] allow score multiple players in single entry (for ties), e.g. `2 mk`
+- [ ] undo
+- [ ] save entries to file / replay from file
+- [ ] confirm exit
+- [ ] reset score
+- [ ] play theme song
+- [ ] final jeopardy mode
+- [ ] config file
+- [ ] different daily double options, e.g. true dd

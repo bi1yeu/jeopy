@@ -97,7 +97,7 @@ class Game:
             if entry == "help":
                 print(
                     "Available commands:"
-                    + "\n<amount / 100> <player>[*][-]:\tadd amount to player's score. `*` denotes daily double (provided amount is doubled). `-` to subtract amount."
+                    + "\n<amount / 100> <player>[<player>][*][-]:\tadd amount to player's score. `*` denotes daily double (provided amount is doubled). `-` to subtract amount."
                     + "\nhelp:\t\t\t\tshow this info"
                     + "\nscores:\t\t\t\tshow the individual scores that were recorded for each player"
                     + "\nregular:\t\t\t\tenter regular Jeopardy round"
@@ -143,21 +143,12 @@ class Game:
 
             val = raw_val * 100
 
-            player = None
+            players = []
             for p in self.players:
                 if p in entry:
-                    player = p
-                    break
+                    players.append(p)
 
-            if player is None:
-                return
-
-            if not player in self.players:
-                print(
-                    "\aThat player is invald.\nValid players are: {}\nTry again.".format(
-                        self.players
-                    )
-                )
+            if len(players) == 0:
                 return
 
             is_wrong = "-" in entry
@@ -169,11 +160,9 @@ class Game:
             if is_daily_double:
                 val *= 2
 
-            if player[-1] == "*":
-                player = player[0]
-                val *= 2
+            for player in players:
+                self.add_to_player_score(player, val)
 
-            self.add_to_player_score(player, val)
             self.print_sum_score()
         except ValueError:
             print("\aCouldn't understand input...please try again.")
