@@ -44,7 +44,7 @@ Type `help` at the prompt for a full list of commands.
 ## R&D
 
 - [x] allow score multiple players in single entry (for ties), e.g. `2 mk`
-- [ ] undo
+- [x] undo
 - [ ] save entries to file / replay from file
 - [ ] confirm exit
 - [ ] reset score

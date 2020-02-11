@@ -26,6 +26,7 @@ class Game:
         self.players = []
         self.scores = {}
         self.history = []
+        self.undo_stack = []
 
     def print_sum_score(self):
         for k, v in self.scores.items():
@@ -57,6 +58,8 @@ class Game:
                 self.add_to_player_score(player, 0)
             except InputError:
                 continue
+            except IndexError:
+                continue
 
     def is_double_jeopardy(self):
         return self.round == Round.DOUBLE_JEO
@@ -84,6 +87,64 @@ class Game:
             self.is_double_jeopardy() and abs(amount) in VALID_DOUBLE_JEOPARDY_AMOUNTS
         )
 
+    def undo(self):
+        try:
+            entry_to_undo = self.undo_stack[-1]
+        except IndexError:
+            return
+        self.score_entry(entry_to_undo, undoing=True)
+        self.undo_stack = self.undo_stack[:-1]
+
+    def score_entry(self, entry, undoing=False):
+        # get numeric val from entry
+        # via https://stackoverflow.com/a/26825833
+        raw_val = int("".join(filter(str.isdigit, entry)))
+
+        if not undoing and not self.is_amount_valid(raw_val):
+            print(
+                "\aThat amount is invalid.\nValid amounts are: {}\nTry again.".format(
+                    VALID_DOUBLE_JEOPARDY_AMOUNTS
+                    if self.is_double_jeopardy()
+                    else VALID_JEOPARDY_AMOUNTS
+                )
+            )
+            return
+
+        val = raw_val * 100
+
+        players = []
+        for p in self.players:
+            if p in entry:
+                players.append(p)
+
+        if len(players) == 0:
+            return
+
+        is_wrong = "-" in entry
+        is_daily_double = "*" in entry
+
+        if is_wrong:
+            val *= -1
+
+        if is_daily_double:
+            val *= 2
+
+        if undoing:
+            val *= -1
+
+        for player in players:
+            self.add_to_player_score(player, val)
+
+        if undoing:
+            entry_to_record = entry + " # undone"
+        else:
+            # don't push onto the undo stack if we're presently undoing,
+            # otherwise a subsequent undo would redo
+            self.undo_stack.append(entry)
+            entry_to_record = entry
+
+        self.history.append(entry_to_record)
+
     def process_line(self, line):
         entry = line.lower().strip()
 
@@ -99,11 +160,17 @@ class Game:
                     "Available commands:"
                     + "\n<amount / 100> <player>[<player>][*][-]:\tadd amount to player's score. `*` denotes daily double (provided amount is doubled). `-` to subtract amount."
                     + "\nhelp:\t\t\t\tshow this info"
+                    + "\nundo:\t\t\t\tundo the last entered score"
                     + "\nscores:\t\t\t\tshow the individual scores that were recorded for each player"
                     + "\nregular:\t\t\t\tenter regular Jeopardy round"
                     + "\ndouble:\t\t\t\tenter Double Jeopardy round"
                     + "\nfinal:\t\t\t\tenter Final Jeopardy round"
                 )
+                return
+
+            if entry == "undo":
+                self.undo()
+                self.print_sum_score()
                 return
 
             if entry == "scores":
@@ -127,43 +194,9 @@ class Game:
                 print("Sorry, that isn't implemented yet.")
                 return
 
-            # get numeric val from entry
-            # via https://stackoverflow.com/a/26825833
-            raw_val = int("".join(filter(str.isdigit, entry)))
-
-            if not self.is_amount_valid(raw_val):
-                print(
-                    "\aThat amount is invalid.\nValid amounts are: {}\nTry again.".format(
-                        VALID_DOUBLE_JEOPARDY_AMOUNTS
-                        if self.is_double_jeopardy()
-                        else VALID_JEOPARDY_AMOUNTS
-                    )
-                )
-                return
-
-            val = raw_val * 100
-
-            players = []
-            for p in self.players:
-                if p in entry:
-                    players.append(p)
-
-            if len(players) == 0:
-                return
-
-            is_wrong = "-" in entry
-            is_daily_double = "*" in entry
-
-            if is_wrong:
-                val *= -1
-
-            if is_daily_double:
-                val *= 2
-
-            for player in players:
-                self.add_to_player_score(player, val)
-
+            self.score_entry(entry)
             self.print_sum_score()
+
         except ValueError:
             print("\aCouldn't understand input...please try again.")
 
