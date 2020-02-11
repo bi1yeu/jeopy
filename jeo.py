@@ -8,12 +8,14 @@ from enum import Enum
 VALID_JEOPARDY_AMOUNTS = [2, 4, 6, 8, 10]
 VALID_DOUBLE_JEOPARDY_AMOUNTS = [s * 2 for s in VALID_JEOPARDY_AMOUNTS]
 NUM_PLAYERS = 2
-HELP_FILE="help_info.txt"
+HELP_FILE = "help_info.txt"
+
 
 class DailyDoubleRule(Enum):
     ORIGINAL_CLUE = 1
     DOUBLE_CLUE = 2
-    TRUE_DD = 3 # stake double player's score
+    TRUE_DD = 3  # stake double player's score
+
 
 class Round(Enum):
     JEO = 1
@@ -190,11 +192,13 @@ class Game:
                 return
 
             if entry == "debug":
-                import pdb; pdb.set_trace()
+                import pdb
+
+                pdb.set_trace()
 
             if entry == "help":
                 with open(HELP_FILE, "r") as f:
-                    [print(line,end="") for line in f.readlines()]
+                    [print(line, end="") for line in f.readlines()]
                 return
 
             if entry == "undo":
