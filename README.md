@@ -14,7 +14,7 @@ $ ./jeo.py
 ```
 
 ```
-> # award $1000 to player a
+> # award $1,000 to player a
 > 10 a
                                                                     a: $1,000
                                                                     z:  $0
@@ -46,9 +46,11 @@ Type `help` at the prompt for a full list of commands.
 - [x] allow score multiple players in single entry (for ties), e.g. `2 mk`
 - [x] undo
 - [ ] save entries to file / replay from file
-- [ ] confirm exit
-- [ ] reset score
-- [ ] play theme song
-- [ ] final jeopardy mode
 - [ ] config file
 - [ ] different daily double options, e.g. true dd
+- [ ] tutorial mode
+- [ ] better commenting support
+- [ ] confirm exit
+- [ ] reset score
+- [ ] play theme song lol
+- [ ] final jeopardy mode

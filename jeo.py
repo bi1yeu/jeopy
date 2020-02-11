@@ -8,6 +8,7 @@ from enum import Enum
 VALID_JEOPARDY_AMOUNTS = [2, 4, 6, 8, 10]
 VALID_DOUBLE_JEOPARDY_AMOUNTS = [s * 2 for s in VALID_JEOPARDY_AMOUNTS]
 NUM_PLAYERS = 2
+HELP_FILE="help_info.txt"
 
 
 class Round(Enum):
@@ -71,7 +72,7 @@ class Game:
         self.setup_players()
 
         print(
-            "Instructions: Record a player's score for a clue with `<amount / 100> <player>`\nE.g., to award $1,000 to player `{}`, enter:\n\n> 10 {}\n\nType `help` for more info.".format(
+            "Instructions: Record a player's score for a clue with `<amount/100> <player>`\nE.g., to award $1,000 to player `{}`, enter:\n\n> 10 {}\n\nType `help` for more info.".format(
                 self.players[0], self.players[0]
             )
         )
@@ -156,16 +157,8 @@ class Game:
                 return
 
             if entry == "help":
-                print(
-                    "Available commands:"
-                    + "\n<amount / 100> <player>[<player>][*][-]:\tadd amount to player's score. `*` denotes daily double (provided amount is doubled). `-` to subtract amount."
-                    + "\nhelp:\t\t\t\tshow this info"
-                    + "\nundo:\t\t\t\tundo the last entered score"
-                    + "\nscores:\t\t\t\tshow the individual scores that were recorded for each player"
-                    + "\nregular:\t\t\t\tenter regular Jeopardy round"
-                    + "\ndouble:\t\t\t\tenter Double Jeopardy round"
-                    + "\nfinal:\t\t\t\tenter Final Jeopardy round"
-                )
+                with open(HELP_FILE, "r") as f:
+                    [print(line,end="") for line in f.readlines()]
                 return
 
             if entry == "undo":

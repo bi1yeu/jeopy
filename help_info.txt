@@ -1,0 +1,11 @@
+Available commands:
+<amount/100> <player> [<player>] [-] [*]:
+          update <player>'s score by <amount/100>
+          `-` denotes an incorrect answer; subtracts provided amount.
+          `*` denotes daily double; doubles provided amount.
+          e.g. `10 a-` subracts $1,000 from player a.
+undo:     undo the previous score entry
+history:  show the history of score entries
+regular:  enter regular Jeopardy round
+double:   enter Double Jeopardy round
+help:     show this helpful info
