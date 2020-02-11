@@ -8,4 +8,5 @@ undo:     undo the previous score entry
 history:  show the history of score entries
 regular:  enter regular Jeopardy round
 double:   enter Double Jeopardy round
+reset:    reset players' scores to 0
 help:     show this helpful info

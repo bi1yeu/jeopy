@@ -25,9 +25,13 @@ class Game:
     def __init__(self):
         self.round = Round.JEO
         self.players = []
+
+    def init_scores(self):
         self.scores = {}
         self.history = []
         self.undo_stack = []
+        for player in self.players:
+            self.add_to_player_score(player, 0)
 
     def print_sum_score(self):
         for k, v in self.scores.items():
@@ -56,7 +60,6 @@ class Game:
                     idx += 1
                 self.players += player
                 print("We'll call them '{}'.".format(player))
-                self.add_to_player_score(player, 0)
             except InputError:
                 continue
             except IndexError:
@@ -70,6 +73,7 @@ class Game:
 
     def play(self):
         self.setup_players()
+        self.init_scores()
 
         print(
             "Instructions: Record a player's score for a clue with `<amount/100> <player>`\nE.g., to award $1,000 to player `{}`, enter:\n\n> 10 {}\n\nType `help` for more info.".format(
@@ -146,6 +150,12 @@ class Game:
 
         self.history.append(entry_to_record)
 
+    def reset(self):
+        confirmation = input("Are you sure you want to reset scores to 0? [y/N]: ")
+        if confirmation.strip().lower() == "y":
+            self.init_scores()
+            self.print_sum_score()
+
     def process_line(self, line):
         entry = line.lower().strip()
 
@@ -185,6 +195,10 @@ class Game:
             if entry == "final":
                 # self.round = Round.FINAL_JEO
                 print("Sorry, that isn't implemented yet.")
+                return
+
+            if entry == "reset":
+                self.reset()
                 return
 
             self.score_entry(entry)

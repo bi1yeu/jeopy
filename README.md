@@ -51,6 +51,6 @@ Type `help` at the prompt for a full list of commands.
 - [ ] tutorial mode
 - [ ] better commenting support
 - [ ] confirm exit
-- [ ] reset score
+- [x] reset score
 - [ ] play theme song lol
 - [ ] final jeopardy mode
