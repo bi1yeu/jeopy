@@ -10,6 +10,10 @@ VALID_DOUBLE_JEOPARDY_AMOUNTS = [s * 2 for s in VALID_JEOPARDY_AMOUNTS]
 NUM_PLAYERS = 2
 HELP_FILE="help_info.txt"
 
+class DailyDoubleRule(Enum):
+    ORIGINAL_CLUE = 1
+    DOUBLE_CLUE = 2
+    TRUE_DD = 3 # stake double player's score
 
 class Round(Enum):
     JEO = 1
@@ -24,25 +28,42 @@ class InputError(Exception):
 class Game:
     def __init__(self):
         self.round = Round.JEO
+        # self.dd_rule = DailyDoubleRule.DOUBLE_CLUE
+        self.dd_rule = DailyDoubleRule.TRUE_DD
         self.players = []
 
     def init_scores(self):
-        self.scores = {}
+        self.scores = []
         self.history = []
         self.undo_stack = []
-        for player in self.players:
-            self.add_to_player_score(player, 0)
+
+    def player_current_score(self, target_player):
+        total = 0
+        for players_amounts in self.scores:
+            for player, amount in players_amounts.items():
+                if player == target_player:
+                    total += amount
+        return total
 
     def print_sum_score(self):
-        for k, v in self.scores.items():
+        summed_scores = {}
+
+        for players_amounts in self.scores:
+            for player, amount in players_amounts.items():
+                if player not in summed_scores:
+                    summed_scores[player] = 0
+                summed_scores[player] += amount
+
+        for player in self.players:
+            player_total = summed_scores.get(player, 0)
             print(
                 "{:>69}: {:>3}".format(
-                    k, locale.format_string("$%1.0f", sum(v), grouping=True)
+                    player, locale.format_string("$%1.0f", player_total, grouping=True)
                 )
             )
 
-    def add_to_player_score(self, player, amount):
-        self.scores.setdefault(player, []).append(amount)
+    def add_to_players_scores(self, player_amounts):
+        self.scores.append(player_amounts)
 
     def setup_players(self):
         while len(self.players) < NUM_PLAYERS:
@@ -71,6 +92,21 @@ class Game:
     def is_final_jeopardy(self):
         return self.round == Round.FINAL_JEO
 
+    def calculate_daily_double_amount(self, player, clue_amount):
+        if self.dd_rule == DailyDoubleRule.ORIGINAL_CLUE:
+            awarded_amount = clue_amount
+        elif self.dd_rule == DailyDoubleRule.DOUBLE_CLUE:
+            awarded_amount = clue_amount * 2
+        elif self.dd_rule == DailyDoubleRule.TRUE_DD:
+            # if a player has less than min_amount, they can still stake up to
+            # min_amount
+            min_amount = VALID_JEOPARDY_AMOUNTS[-1] * 100
+            if self.is_double_jeopardy():
+                min_amount = VALID_DOUBLE_JEOPARDY_AMOUNTS[-1] * 100
+            player_score = self.player_current_score(player)
+            awarded_amount = max(player_score, min_amount)
+        return awarded_amount
+
     def play(self):
         self.setup_players()
         self.init_scores()
@@ -94,18 +130,17 @@ class Game:
 
     def undo(self):
         try:
-            entry_to_undo = self.undo_stack[-1]
+            self.scores = self.scores[:-1]
+            self.history = self.history[:-1]
         except IndexError:
             return
-        self.score_entry(entry_to_undo, undoing=True)
-        self.undo_stack = self.undo_stack[:-1]
 
-    def score_entry(self, entry, undoing=False):
-        # get numeric val from entry
+    def score_entry(self, entry):
+        # get numeric amount from entry
         # via https://stackoverflow.com/a/26825833
-        raw_val = int("".join(filter(str.isdigit, entry)))
+        raw_amount = int("".join(filter(str.isdigit, entry)))
 
-        if not undoing and not self.is_amount_valid(raw_val):
+        if not self.is_amount_valid(raw_amount):
             print(
                 "\aThat amount is invalid.\nValid amounts are: {}\nTry again.".format(
                     VALID_DOUBLE_JEOPARDY_AMOUNTS
@@ -115,40 +150,29 @@ class Game:
             )
             return
 
-        val = raw_val * 100
-
-        players = []
-        for p in self.players:
-            if p in entry:
-                players.append(p)
-
-        if len(players) == 0:
-            return
-
         is_wrong = "-" in entry
         is_daily_double = "*" in entry
 
-        if is_wrong:
-            val *= -1
+        players_amounts = {}
 
-        if is_daily_double:
-            val *= 2
+        # even in the case of "ties", we need to score each player
+        # individiually since a true daily double may result in different point
+        # amounts being awarded.
+        for player in self.players:
+            if player in entry:
+                amount = raw_amount * 100
 
-        if undoing:
-            val *= -1
+                if is_daily_double:
+                    amount = self.calculate_daily_double_amount(player, amount)
 
-        for player in players:
-            self.add_to_player_score(player, val)
+                if is_wrong:
+                    amount *= -1
 
-        if undoing:
-            entry_to_record = entry + " # undone"
-        else:
-            # don't push onto the undo stack if we're presently undoing,
-            # otherwise a subsequent undo would redo
-            self.undo_stack.append(entry)
-            entry_to_record = entry
+                players_amounts[player] = amount
 
-        self.history.append(entry_to_record)
+        if len(players_amounts) > 0:
+            self.add_to_players_scores(players_amounts)
+            self.history.append(entry)
 
     def reset(self):
         confirmation = input("Are you sure you want to reset scores to 0? [y/N]: ")
@@ -158,13 +182,15 @@ class Game:
 
     def process_line(self, line):
         entry = line.lower().strip()
-
         try:
             if entry == "":
                 return
 
             if entry[0] == "#":
                 return
+
+            if entry == "debug":
+                import pdb; pdb.set_trace()
 
             if entry == "help":
                 with open(HELP_FILE, "r") as f:
@@ -203,7 +229,6 @@ class Game:
 
             self.score_entry(entry)
             self.print_sum_score()
-
         except ValueError:
             print("\aCouldn't understand input...please try again.")
 

@@ -47,10 +47,11 @@ Type `help` at the prompt for a full list of commands.
 - [x] undo
 - [ ] save entries to file / replay from file
 - [ ] config file
-- [ ] different daily double options, e.g. true dd
+- [x] different daily double options, e.g. true dd
 - [ ] tutorial mode
 - [ ] better commenting support
 - [ ] confirm exit
 - [x] reset score
 - [ ] play theme song lol
 - [ ] final jeopardy mode
+- [ ] type hints
