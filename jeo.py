@@ -30,8 +30,7 @@ class InputError(Exception):
 class Game:
     def __init__(self):
         self.round = Round.JEO
-        # self.dd_rule = DailyDoubleRule.DOUBLE_CLUE
-        self.dd_rule = DailyDoubleRule.TRUE_DD
+        self.dd_rule = DailyDoubleRule.DOUBLE_CLUE
         self.players = []
 
     def init_scores(self):
