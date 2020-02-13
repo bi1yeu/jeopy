@@ -2,8 +2,6 @@
 
 A CLI for scoring _Jeopardy!_ It aims to make scoring while watching easy for touch typists.
 
-The only house rule baked into the program is that Daily Doubles are valued at twice the clue's original value to obviate pausing the show.
-
 ## Usage
 
 Requires Python 3. On Windows you will also need `pip install pyreadline`.
