@@ -1,20 +1,28 @@
 #!/usr/bin/env python3
 
+import json
 import locale
-import time
 import readline
+import time
 from enum import Enum
 
 VALID_JEOPARDY_AMOUNTS = [2, 4, 6, 8, 10]
 VALID_DOUBLE_JEOPARDY_AMOUNTS = [s * 2 for s in VALID_JEOPARDY_AMOUNTS]
-NUM_PLAYERS = 2
 HELP_FILE = "help_info.txt"
+CONFIG_FILE = "config.json"
 
 
 class DailyDoubleRule(Enum):
     ORIGINAL_CLUE = 1
     DOUBLE_CLUE = 2
     TRUE_DD = 3  # stake double player's score
+
+
+DD_RULE_DESCS = {
+    DailyDoubleRule.ORIGINAL_CLUE: "Clue face value",
+    DailyDoubleRule.DOUBLE_CLUE: "Double clue face value",
+    DailyDoubleRule.TRUE_DD: "True Daily Double",
+}
 
 
 class Round(Enum):
@@ -27,11 +35,96 @@ class InputError(Exception):
     pass
 
 
+def solicit_player_names(num_players):
+    players = []
+    while len(players) < num_players:
+        try:
+            player_full = input("Name of player {}: ".format(len(players) + 1)).lower()
+            player = player_full[0]
+            idx = 1
+            while player in players:
+                if idx >= len(player_full):
+                    print("Let's try that again...")
+                    raise InputError
+                player = player_full[idx]
+                idx += 1
+            players += player
+            print("We'll call them '{}'.".format(player))
+        except InputError:
+            continue
+        except IndexError:
+            continue
+    return players
+
+
+def solicit_dd_rule():
+    print("Choose Daily Double scoring strategy:")
+    for k, v in DD_RULE_DESCS.items():
+        print("{}. {}".format(k.value, v))
+    dd_rule = None
+    while dd_rule is None:
+        try:
+            raw_selection = input("Enter Daily Double scoring strategy: ")
+            dd_rule = DailyDoubleRule(int(raw_selection))
+        except ValueError:
+            pass
+    return dd_rule
+
+
 class Game:
     def __init__(self):
         self.round = Round.JEO
-        self.dd_rule = DailyDoubleRule.DOUBLE_CLUE
-        self.players = []
+        self.read_config()
+        self.init_scores()
+
+    def read_config(self):
+        loaded_saved_config = False
+        try:
+            with open(CONFIG_FILE, "r") as config_file:
+                self.config = json.load(config_file)
+                loaded_saved_config = True
+        except FileNotFoundError:
+            print("Welcome to JEOPY!\n")
+            self.solicit_settings(save_and_apply=True)
+
+        self.dd_rule = DailyDoubleRule(self.config["dd_rule"])
+
+        self.players = self.config.get("players", [])
+        self.num_players = len(self.players) or self.config["num_players"]
+
+        if loaded_saved_config:
+            print("Loaded saved settings. Type `settings` to change configuration.")
+            print("Players: " + ", ".join(self.players))
+            print("Daily Double scoring strategy: " + DD_RULE_DESCS[self.dd_rule])
+
+    def solicit_settings(self, save_and_apply=False):
+        num_players = None
+        while num_players is None:
+            try:
+                num_players = int(input("How many players? "))
+            except ValueError:
+                print("Please enter a number")
+
+        players = solicit_player_names(num_players)
+        dd_rule = solicit_dd_rule().value
+
+        if not save_and_apply:
+            confirm_save = input("Do you want to save these settings? [y/N]: ")
+        if save_and_apply or confirm_save.strip().lower() == "y":
+            with open(CONFIG_FILE, "w") as config_file:
+                config = {
+                    "num_players": len(players),
+                    "players": players,
+                    "dd_rule": dd_rule,
+                }
+                json.dump(config, config_file)
+                if save_and_apply:
+                    self.config = config
+                    print("Settings saved for next time.")
+            if not save_and_apply:
+                print("Settings successfully saved. They will take effect next game.")
+        else:
+            print("Settings not saved.")
 
     def init_scores(self):
         self.scores = []
@@ -66,27 +159,6 @@ class Game:
     def add_to_players_scores(self, player_amounts):
         self.scores.append(player_amounts)
 
-    def setup_players(self):
-        while len(self.players) < NUM_PLAYERS:
-            try:
-                player_full = input(
-                    "Name of player {}: ".format(len(self.players) + 1)
-                ).lower()
-                player = player_full[0]
-                idx = 1
-                while player in self.players:
-                    if idx >= len(player_full):
-                        print("Let's try that again...")
-                        raise InputError
-                    player = player_full[idx]
-                    idx += 1
-                self.players += player
-                print("We'll call them '{}'.".format(player))
-            except InputError:
-                continue
-            except IndexError:
-                continue
-
     def is_double_jeopardy(self):
         return self.round == Round.DOUBLE_JEO
 
@@ -109,13 +181,12 @@ class Game:
         return awarded_amount
 
     def play(self):
-        self.setup_players()
-        self.init_scores()
-
         print(
-            "Instructions: Record a player's score for a clue with `<amount/100> <player>`\nE.g., to award $1,000 to player `{}`, enter:\n\n> 10 {}\n\nType `help` for more info.".format(
+            "--------------------------------------------------------------------------------\n"
+            + "Instructions: Record a player's score for a clue with `<amount/100> <player>`\nE.g., to award $1,000 to player {}, enter:\n\n> 10 {}\n\nType `help` for more info.\n".format(
                 self.players[0], self.players[0]
             )
+            + "--------------------------------------------------------------------------------\n"
         )
 
         while True:
@@ -174,12 +245,16 @@ class Game:
         if len(players_amounts) > 0:
             self.add_to_players_scores(players_amounts)
             self.history.append(entry)
+        else:
+            print("\aUnknown player. Try again.")
 
-    def reset(self):
+    def confirm_reset(self):
         confirmation = input("Are you sure you want to reset scores to 0? [y/N]: ")
         if confirmation.strip().lower() == "y":
             self.init_scores()
             self.print_sum_score()
+            return True
+        return False
 
     def process_line(self, line):
         entry = line.lower().strip()
@@ -205,6 +280,10 @@ class Game:
                 self.print_sum_score()
                 return
 
+            if entry == "settings":
+                self.solicit_settings()
+                return
+
             if entry == "scores":
                 print(self.scores)
                 return
@@ -227,7 +306,7 @@ class Game:
                 return
 
             if entry == "reset":
-                self.reset()
+                self.confirm_reset()
                 return
 
             self.score_entry(entry)
@@ -237,13 +316,21 @@ class Game:
 
 
 if __name__ == "__main__":
-    print("This...")
-    print("       ...is...")
-    print("               ...JEO.PY!")
     print(
-        "--------------------------------------------------------------------------------"
+        """
+================================================================================
+    _____  ________   ______   _______   __      __  __
+   /     |/        | /      \ /       \ /  \    /  |/  |
+   $$$$$ |$$$$$$$$/ /$$$$$$  |$$$$$$$  |$$  \  /$$/ $$ |
+      $$ |$$ |__    $$ |  $$ |$$ |__$$ | $$  \/$$/  $$ |
+ __   $$ |$$    |   $$ |  $$ |$$    $$/   $$  $$/   $$ |
+/  |  $$ |$$$$$/    $$ |  $$ |$$$$$$$/     $$$$/    $$/
+$$ \__$$ |$$ |_____ $$ \__$$ |$$ |          $$ |     __
+$$    $$/ $$       |$$    $$/ $$ |          $$ |    /  |
+ $$$$$$/  $$$$$$$$/  $$$$$$/  $$/           $$/     $$/
+================================================================================
+"""
     )
-
     locale.setlocale(locale.LC_ALL, "")
 
     game = Game()

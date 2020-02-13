@@ -46,8 +46,9 @@ Type `help` at the prompt for a full list of commands.
 - [x] allow score multiple players in single entry (for ties), e.g. `2 mk`
 - [x] undo
 - [ ] save entries to file / replay from file
-- [ ] config file
+- [x] config file
 - [x] different daily double options, e.g. true dd
+- [ ] per-player daily double options
 - [ ] tutorial mode
 - [ ] better commenting support
 - [ ] confirm exit
@@ -55,3 +56,4 @@ Type `help` at the prompt for a full list of commands.
 - [ ] play theme song lol
 - [ ] final jeopardy mode
 - [ ] type hints
+- [ ] single player mode
