@@ -39,6 +39,15 @@ $ ./jeo.py
 
 Type `help` at the prompt for a full list of commands.
 
+## Development
+
+To run tests:
+
+```
+pip install pytest pytest-mock
+pytest
+```
+
 ## R&D
 
 - [x] allow score multiple players in single entry (for ties), e.g. `2 mk`
