@@ -129,7 +129,6 @@ class Game:
     def init_scores(self):
         self.scores = []
         self.history = []
-        self.undo_stack = []
 
     def player_current_score(self, target_player):
         total = 0
