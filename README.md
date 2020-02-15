@@ -48,6 +48,13 @@ pip install pytest pytest-mock
 pytest
 ```
 
+Type checking:
+
+```
+pip install mypy
+mypy jeo.py
+```
+
 ## R&D
 
 - [x] allow score multiple players in single entry (for ties), e.g. `2 mk`
