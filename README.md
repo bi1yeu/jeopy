@@ -69,5 +69,5 @@ mypy jeo.py
 - [x] reset score
 - [ ] play theme song lol
 - [ ] final jeopardy mode
-- [ ] type hints
+- [x] type hints
 - [ ] single player mode
