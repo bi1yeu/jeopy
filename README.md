@@ -4,7 +4,7 @@ A CLI for scoring _Jeopardy!_ It aims to make scoring while watching easy for to
 
 ## Usage
 
-Requires Python 3. On Windows you will also need `pip install pyreadline`.
+Requires Python >= 3.6. On Windows you will also need `pip install pyreadline`.
 
 ```bash
 $ chmod +x jeo.py

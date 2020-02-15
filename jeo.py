@@ -5,20 +5,23 @@ import locale
 import readline
 import time
 from enum import Enum
+from typing import List, Dict, Union, Optional, Any
 
-VALID_JEOPARDY_AMOUNTS = [2, 4, 6, 8, 10]
-VALID_DOUBLE_JEOPARDY_AMOUNTS = [s * 2 for s in VALID_JEOPARDY_AMOUNTS]
-HELP_FILE = "help_info.txt"
-CONFIG_FILE = "config.json"
+VALID_JEOPARDY_AMOUNTS: List[int] = [2, 4, 6, 8, 10]
+VALID_DOUBLE_JEOPARDY_AMOUNTS: List[int] = [s * 2 for s in VALID_JEOPARDY_AMOUNTS]
+HELP_FILE: str = "help_info.txt"
+CONFIG_FILE: str = "config.json"
 
 
 class DailyDoubleRule(Enum):
     ORIGINAL_CLUE = 1
     DOUBLE_CLUE = 2
     TRUE_DD = 3  # stake double player's score
+    # RANDOM = 4 #TODO
+    # OFF = 5 #TODO
 
 
-DD_RULE_DESCS = {
+DD_RULE_DESCS: Dict[DailyDoubleRule, str] = {
     DailyDoubleRule.ORIGINAL_CLUE: "Clue face value",
     DailyDoubleRule.DOUBLE_CLUE: "Double clue face value",
     DailyDoubleRule.TRUE_DD: "True Daily Double",
@@ -35,13 +38,15 @@ class InputError(Exception):
     pass
 
 
-def solicit_player_names(num_players):
-    players = []
+def solicit_player_names(num_players: int) -> List[str]:
+    players: List[str] = []
     while len(players) < num_players:
         try:
-            player_full = input("Name of player {}: ".format(len(players) + 1)).lower()
-            player = player_full[0]
-            idx = 1
+            player_full: str = input(
+                "Name of player {}: ".format(len(players) + 1)
+            ).lower()
+            player: str = player_full[0]
+            idx: int = 1
             while player in players:
                 if idx >= len(player_full):
                     print("Let's try that again...")
@@ -57,11 +62,11 @@ def solicit_player_names(num_players):
     return players
 
 
-def solicit_dd_rule():
+def solicit_dd_rule() -> DailyDoubleRule:
     print("Choose Daily Double scoring strategy:")
     for k, v in DD_RULE_DESCS.items():
         print("{}. {}".format(k.value, v))
-    dd_rule = None
+    dd_rule: Optional[DailyDoubleRule] = None
     while dd_rule is None:
         try:
             raw_selection = input("Enter Daily Double scoring strategy: ")
@@ -72,32 +77,42 @@ def solicit_dd_rule():
 
 
 class Game:
-    def __init__(self):
-        self.round = Round.JEO
+    game_round: Round
+    players: List[str]
+    # TODO use TypedDict; available in 3.8
+    config: Any
+    history: List[str]
+    scores: List[Dict[str, int]]
+
+    def __init__(self) -> None:
+        self.game_round = Round.JEO
         self.read_config()
         self.init_scores()
 
-    def read_config(self):
+    def init_scores(self) -> None:
+        self.scores = []
+        self.history = []
+
+    def read_config(self) -> None:
         loaded_saved_config = False
         try:
             with open(CONFIG_FILE, "r") as config_file:
                 self.config = json.load(config_file)
                 loaded_saved_config = True
         except FileNotFoundError:
-            print("Welcome to JEOPY!\n")
+            print("Welcome to JEO.PY!\n")
             self.solicit_settings(save_and_apply=True)
 
         self.dd_rule = DailyDoubleRule(self.config["dd_rule"])
 
         self.players = self.config.get("players", [])
-        self.num_players = len(self.players) or self.config["num_players"]
 
         if loaded_saved_config:
             print("Loaded saved settings. Type `settings` to change configuration.")
             print("Players: " + ", ".join(self.players))
             print("Daily Double scoring strategy: " + DD_RULE_DESCS[self.dd_rule])
 
-    def solicit_settings(self, save_and_apply=False):
+    def solicit_settings(self, save_and_apply: bool = False) -> None:
         num_players = None
         while num_players is None:
             try:
@@ -126,11 +141,7 @@ class Game:
         else:
             print("Settings not saved.")
 
-    def init_scores(self):
-        self.scores = []
-        self.history = []
-
-    def player_current_score(self, target_player):
+    def player_current_score(self, target_player: str) -> int:
         total = 0
         for players_amounts in self.scores:
             for player, amount in players_amounts.items():
@@ -138,8 +149,8 @@ class Game:
                     total += amount
         return total
 
-    def print_sum_score(self):
-        summed_scores = {}
+    def print_sum_score(self) -> None:
+        summed_scores: Dict[str, int] = {}
 
         for players_amounts in self.scores:
             for player, amount in players_amounts.items():
@@ -155,16 +166,16 @@ class Game:
                 )
             )
 
-    def add_to_players_scores(self, player_amounts):
+    def add_to_players_scores(self, player_amounts: Dict[str, int]) -> None:
         self.scores.append(player_amounts)
 
-    def is_double_jeopardy(self):
-        return self.round == Round.DOUBLE_JEO
+    def is_double_jeopardy(self) -> bool:
+        return self.game_round == Round.DOUBLE_JEO
 
-    def is_final_jeopardy(self):
-        return self.round == Round.FINAL_JEO
+    def is_final_jeopardy(self) -> bool:
+        return self.game_round == Round.FINAL_JEO
 
-    def calculate_daily_double_amount(self, player, clue_amount):
+    def calculate_daily_double_amount(self, player: str, clue_amount: int) -> int:
         if self.dd_rule == DailyDoubleRule.ORIGINAL_CLUE:
             awarded_amount = clue_amount
         elif self.dd_rule == DailyDoubleRule.DOUBLE_CLUE:
@@ -179,34 +190,21 @@ class Game:
             awarded_amount = max(player_score, min_amount)
         return awarded_amount
 
-    def play(self):
-        print(
-            "--------------------------------------------------------------------------------\n"
-            + "Instructions: Record a player's score for a clue with `<amount/100> <player>`\nE.g., to award $1,000 to player {}, enter:\n\n> 10 {}\n\nType `help` for more info.\n".format(
-                self.players[0], self.players[0]
-            )
-            + "--------------------------------------------------------------------------------\n"
-        )
-
-        while True:
-            prompt = ">> " if self.is_double_jeopardy() else "> "
-            self.process_line(input(prompt))
-
-    def is_amount_valid(self, amount):
+    def is_amount_valid(self, amount: int) -> bool:
         return (
             not self.is_double_jeopardy() and abs(amount) in VALID_JEOPARDY_AMOUNTS
         ) or (
             self.is_double_jeopardy() and abs(amount) in VALID_DOUBLE_JEOPARDY_AMOUNTS
         )
 
-    def undo(self):
+    def undo(self) -> None:
         try:
             self.scores = self.scores[:-1]
             self.history = self.history[:-1]
         except IndexError:
             return
 
-    def score_entry(self, entry):
+    def score_entry(self, entry: str) -> None:
         # get numeric amount from entry
         # via https://stackoverflow.com/a/26825833
         raw_amount = int("".join(filter(str.isdigit, entry)))
@@ -247,7 +245,7 @@ class Game:
         else:
             print("\aUnknown player. Try again.")
 
-    def confirm_reset(self):
+    def confirm_reset(self) -> bool:
         confirmation = input("Are you sure you want to reset scores to 0? [y/N]: ")
         if confirmation.strip().lower() == "y":
             self.init_scores()
@@ -255,7 +253,7 @@ class Game:
             return True
         return False
 
-    def process_line(self, line):
+    def process_line(self, line: str) -> None:
         entry = line.lower().strip()
         try:
             if entry == "":
@@ -271,7 +269,8 @@ class Game:
 
             if entry == "help":
                 with open(HELP_FILE, "r") as f:
-                    [print(line, end="") for line in f.readlines()]
+                    for line in f.readlines():
+                        print(line, end="")
                 return
 
             if entry == "undo":
@@ -288,19 +287,20 @@ class Game:
                 return
 
             if entry == "history":
-                [print(h) for h in self.history]
+                for h in self.history:
+                    print(h)
                 return
 
             if entry == "regular":
-                self.round = Round.JEO
+                self.game_round: Round = Round.JEO
                 return
 
             if entry == "double":
-                self.round = Round.DOUBLE_JEO
+                self.game_round: Round = Round.DOUBLE_JEO
                 return
 
             if entry == "final":
-                # self.round = Round.FINAL_JEO
+                # self.game_round: Round = Round.FINAL_JEO
                 print("Sorry, that isn't implemented yet.")
                 return
 
@@ -313,10 +313,25 @@ class Game:
         except ValueError:
             print("\aCouldn't understand input...please try again.")
 
+    def play(self) -> None:
+        print(
+            "--------------------------------------------------------------------------------\n"
+            + "Instructions: Record a player's score for a clue with "
+            + "`<amount/100> <player>`\nE.g., to award $1,000 to "
+            + "player {},enter:\n\n> 10 {}\n\nType `help` for more info.\n".format(
+                self.players[0], self.players[0]
+            )
+            + "--------------------------------------------------------------------------------\n"
+        )
+
+        while True:
+            prompt = ">> " if self.is_double_jeopardy() else "> "
+            self.process_line(input(prompt))
+
 
 if __name__ == "__main__":
     print(
-        """
+        r"""
 ================================================================================
     _____  ________   ______      _______   __      __  __
    /     |/        | /      \    /       \ /  \    /  |/  |
