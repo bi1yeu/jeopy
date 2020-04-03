@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+
 import json
 import locale
 import readline
@@ -76,6 +77,11 @@ def solicit_dd_rule() -> DailyDoubleRule:
     return dd_rule
 
 
+def confirm(prompt: str) -> bool:
+    confirmation = input("{} [y/N]: ".format(prompt))
+    return confirmation.strip().lower() == "y"
+
+
 class Game:
     game_round: Round
     players: List[str]
@@ -124,8 +130,8 @@ class Game:
         dd_rule = solicit_dd_rule().value
 
         if not save_and_apply:
-            confirm_save = input("Do you want to save these settings? [y/N]: ")
-        if save_and_apply or confirm_save.strip().lower() == "y":
+            confirm_save = confirm("Do you want to save these settings?")
+        if save_and_apply or confirm_save:
             with open(CONFIG_FILE, "w") as config_file:
                 config = {
                     "num_players": len(players),
@@ -246,8 +252,8 @@ class Game:
             print("\aUnknown player. Try again.")
 
     def confirm_reset(self) -> bool:
-        confirmation = input("Are you sure you want to reset scores to 0? [y/N]: ")
-        if confirmation.strip().lower() == "y":
+        confirmation = confirm("Are you sure you want to reset scores to 0?")
+        if confirmation:
             self.init_scores()
             self.print_sum_score()
             return True
@@ -318,7 +324,7 @@ class Game:
             "--------------------------------------------------------------------------------\n"
             + "Instructions: Record a player's score for a clue with "
             + "`<amount/100> <player>`\nE.g., to award $1,000 to "
-            + "player {},enter:\n\n> 10 {}\n\nType `help` for more info.\n".format(
+            + "player {}, enter:\n\n> 10 {}\n\nType `help` for more info.\n".format(
                 self.players[0], self.players[0]
             )
             + "--------------------------------------------------------------------------------\n"

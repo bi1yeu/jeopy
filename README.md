@@ -71,3 +71,4 @@ mypy jeo.py
 - [ ] final jeopardy mode
 - [x] type hints
 - [ ] single player mode
+- [ ] summary statistics
