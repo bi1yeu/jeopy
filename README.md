@@ -1,6 +1,6 @@
 # This...is...JEO.PY!
 
-A CLI for scoring _Jeopardy!_ It aims to make scoring while watching easy for touch typists.
+A text-based user interface for scoring _Jeopardy!_ It aims to make scoring while watching easy for touch typists.
 
 ## Usage
 
