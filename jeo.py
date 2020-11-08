@@ -273,6 +273,10 @@ class Game:
 
                 pdb.set_trace()
 
+            if entry == "f":
+                print("Rest in Peace, Alex Trebek.")
+                return
+
             if entry == "help":
                 with open(HELP_FILE, "r") as f:
                     for line in f.readlines():
